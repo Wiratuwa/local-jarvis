@@ -11,6 +11,16 @@ const statusEl    = document.getElementById('status-text');
 const errorBar    = document.getElementById('error-bar');
 const modelSelect = document.getElementById('model-select');
 
+// System prompt — language-adaptive JARVIS personality
+const SYSTEM_PROMPT = {
+  role: 'system',
+  content: `You are JARVIS, a highly intelligent local AI assistant inspired by Iron Man's AI.
+Always detect the language the user is writing or speaking in, and respond entirely in that same language.
+Use natural grammar, vocabulary, and expressions native to that language — never mix languages unless the user does.
+Match the user's level of formality. If the user speaks Indonesian, respond in natural Indonesian. If Japanese, respond in natural Japanese. And so on.
+Be concise, sharp, and helpful. Avoid unnecessary filler phrases.`
+};
+
 let history = [];
 let busy    = false;
 
@@ -45,9 +55,9 @@ function showError(msg) {
 // ── MESSAGE RENDERING ─────────────────────────────────────────
 function addMessage(role, content) {
   emptyEl.style.display = 'none';
-  const el = document.createElement('div');
+  const el    = document.createElement('div');
   el.className = `message ${role}`;
-  const label = role === 'user' ? 'YOU' : modelSelect.value.toUpperCase();
+  const label  = role === 'user' ? 'YOU' : modelSelect.value.toUpperCase();
   el.innerHTML = `<div class="meta">${label}</div><div class="bubble"></div>`;
   chatEl.appendChild(el);
   if (content) el.querySelector('.bubble').textContent = content;
@@ -57,9 +67,9 @@ function addMessage(role, content) {
 
 function addThinking() {
   emptyEl.style.display = 'none';
-  const el = document.createElement('div');
+  const el    = document.createElement('div');
   el.className = 'message assistant';
-  el.id = 'thinking-msg';
+  el.id        = 'thinking-msg';
   el.innerHTML = `<div class="meta">${modelSelect.value.toUpperCase()}</div>
     <div class="bubble"><div class="thinking"><span></span><span></span><span></span></div></div>`;
   chatEl.appendChild(el);
@@ -72,10 +82,9 @@ async function sendMessage(text) {
   text = text || inputEl.value.trim();
   if (!text || busy) return;
 
-  // Stop any ongoing speech
   if (window.speechSynthesis?.speaking) {
     window.speechSynthesis.cancel();
-    setSpeaking(false);
+    if (window.setSpeaking) setSpeaking(false);
   }
 
   inputEl.value = '';
@@ -93,7 +102,12 @@ async function sendMessage(text) {
     const response = await fetch(`${OLLAMA_URL}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: modelSelect.value, messages: history, stream: true })
+      body: JSON.stringify({
+        model: modelSelect.value,
+        // Always prepend system prompt so JARVIS identity is consistent
+        messages: [SYSTEM_PROMPT, ...history],
+        stream: true
+      })
     });
 
     if (!response.ok) throw new Error(`Ollama error: ${response.status} ${response.statusText}`);
@@ -122,7 +136,6 @@ async function sendMessage(text) {
 
     history.push({ role: 'assistant', content: full });
 
-    // Hand off to TTS if enabled
     const ttsOn = document.getElementById('tts-toggle')?.checked;
     if (ttsOn && full.trim() && window.speakText) {
       speakText(full);
