@@ -15,6 +15,8 @@
   --accent-glow:  rgba(0,200,255,0.18);
   --danger:       #ff4466;
   --success:      #00ffaa;
+  --wake:         #ffaa00;
+  --wake-glow:    rgba(255,170,0,0.25);
   --user-bg:      rgba(0,100,200,0.12);
   --font-display: 'Orbitron', monospace;
   --font-body:    'Rajdhani', sans-serif;
@@ -64,11 +66,12 @@ body::before {
 .corner-br { bottom: 8px; right: 8px;  border-width: 0 2px 2px 0; }
 
 /* ── ANIMATIONS ───────────────────────────────────────────────── */
-@keyframes spin      { to { transform: rotate(360deg); } }
-@keyframes fadein    { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-@keyframes blink     { 0%,80%,100%{opacity:0.2;transform:scale(0.7)} 40%{opacity:1;transform:scale(1)} }
-@keyframes pulse-ring { 0%{box-shadow:0 0 0 0 rgba(255,68,102,0.5)} 70%{box-shadow:0 0 0 10px rgba(255,68,102,0)} 100%{box-shadow:0 0 0 0 rgba(255,68,102,0)} }
-@keyframes speak-wave { 0%,100%{transform:scaleY(0.4);opacity:0.5} 50%{transform:scaleY(1);opacity:1} }
+@keyframes spin        { to { transform: rotate(360deg); } }
+@keyframes fadein      { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes blink       { 0%,80%,100%{opacity:0.2;transform:scale(0.7)} 40%{opacity:1;transform:scale(1)} }
+@keyframes pulse-ring  { 0%{box-shadow:0 0 0 0 rgba(255,68,102,0.5)} 70%{box-shadow:0 0 0 10px rgba(255,68,102,0)} 100%{box-shadow:0 0 0 0 rgba(255,68,102,0)} }
+@keyframes speak-wave  { 0%,100%{transform:scaleY(0.4);opacity:0.5} 50%{transform:scaleY(1);opacity:1} }
+@keyframes wake-pulse  { 0%{box-shadow:0 0 0 0 var(--wake-glow)} 70%{box-shadow:0 0 0 8px transparent} 100%{box-shadow:0 0 0 0 transparent} }
 
 /* ── HEADER ───────────────────────────────────────────────────── */
 header {
@@ -120,6 +123,41 @@ header::after {
 }
 .dot.online { background: var(--success); box-shadow: 0 0 8px var(--success); }
 .dot.error  { background: var(--danger);  box-shadow: 0 0 8px var(--danger); }
+
+/* ── WAKE WORD BUTTON ─────────────────────────────────────────── */
+.btn-wake {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border-bright);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  flex-shrink: 0;
+}
+.btn-wake svg {
+  width: 14px; height: 14px;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+.btn-wake:hover {
+  border-color: var(--wake);
+  color: var(--wake);
+}
+.btn-wake.wake-active {
+  border-color: var(--wake);
+  color: var(--wake);
+  background: rgba(255,170,0,0.08);
+  box-shadow: 0 0 10px var(--wake-glow);
+  animation: wake-pulse 2s infinite;
+}
 
 /* TTS toggle */
 .tts-toggle {
