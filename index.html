@@ -47,6 +47,17 @@
       </div>
     </div>
 
+    <!-- Wake word toggle -->
+    <button id="wake-btn" class="btn-wake" title='Wake word ON — say "Jarvis" to activate'>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="23"/>
+        <line x1="8" y1="23" x2="16" y2="23"/>
+      </svg>
+      <span class="wake-label">WAKE</span>
+    </button>
+
     <label class="tts-toggle" title="Text-to-speech">
       <input type="checkbox" id="tts-toggle" checked />
       <span class="tts-pill"></span>
@@ -76,7 +87,8 @@
       </div>
       <div class="tagline">JARVIS LOCAL AGENT</div>
       <p>
-        Click the mic or press <span class="key-hint">SPACE</span> to speak.<br />
+        Say <span class="key-hint">JARVIS</span> to activate &nbsp;·&nbsp;
+        Click the mic or press <span class="key-hint">SPACE</span> to speak directly.<br />
         Type to send a message manually.<br />
         All processing stays on your machine.
       </p>
@@ -86,7 +98,7 @@
   <footer>
     <div class="error-bar" id="error-bar"></div>
     <div class="input-row">
-      <textarea id="input" rows="1" placeholder="Type a command or press mic to speak…" autofocus></textarea>
+      <textarea id="input" rows="1" placeholder="Type a command or say &quot;Jarvis&quot; to speak…" autofocus></textarea>
 
       <button class="btn-voice" id="voice-btn" title="Click to speak (or press Space)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -108,6 +120,7 @@
       <span class="key">ENTER</span> send &nbsp;·&nbsp;
       <span class="key">SHIFT+ENTER</span> new line &nbsp;·&nbsp;
       <span class="key">SPACE</span> toggle mic &nbsp;·&nbsp;
+      <span class="key">JARVIS</span> wake word &nbsp;·&nbsp;
       Runs 100% locally via Ollama
     </p>
   </footer>
