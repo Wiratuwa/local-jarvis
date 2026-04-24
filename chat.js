@@ -54,7 +54,7 @@ function showError(msg) {
 // ── MESSAGE RENDERING ─────────────────────────────────────────
 function addMessage(role, content) {
   emptyEl.style.display = 'none';
-  const el     = document.createElement('div');
+  const el    = document.createElement('div');
   el.className = `message ${role}`;
   const label  = role === 'user' ? 'YOU' : modelSelect.value.toUpperCase();
   el.innerHTML = `<div class="meta">${label}</div><div class="bubble"></div>`;
@@ -66,7 +66,7 @@ function addMessage(role, content) {
 
 function addThinking() {
   emptyEl.style.display = 'none';
-  const el     = document.createElement('div');
+  const el    = document.createElement('div');
   el.className = 'message assistant';
   el.id        = 'thinking-msg';
   el.innerHTML = `<div class="meta">${modelSelect.value.toUpperCase()}</div>
@@ -74,6 +74,94 @@ function addThinking() {
   chatEl.appendChild(el);
   chatEl.scrollTop = chatEl.scrollHeight;
   return el;
+}
+
+// ── REAL-TIME SENTENCE STREAMING TTS ─────────────────────────
+let ttsQueue      = [];
+let ttsBusy       = false;
+let ttsStreamDone = false;
+
+// Split only on sentence-ending punctuation followed by whitespace or end-of-string.
+// Avoids splitting on: "e.g.", "U.S.", "3.14", "no cap!", mid-word abbreviations.
+// Minimum 40 chars before a split so we don't fire tiny fragments.
+function flushSentenceBuffer(buffer, force = false) {
+  const sentences = [];
+  // Matches: 40+ chars, ending in . ! ? followed by space/end (not another letter/digit)
+  const re = /(.{40,}?)([.!?]+)(?=\s|$)(?![\w])/g;
+  let lastIndex = 0;
+  let match;
+  while ((match = re.exec(buffer)) !== null) {
+    const s = (match[1] + match[2]).trim();
+    if (s.length >= 10) sentences.push(s);
+    lastIndex = re.lastIndex;
+  }
+  const remaining = buffer.slice(lastIndex);
+  if (force && remaining.trim().length >= 10) {
+    sentences.push(remaining.trim());
+    return { sentences, remaining: '' };
+  }
+  return { sentences, remaining };
+}
+
+async function processTTSQueue() {
+  if (ttsBusy) return;
+  ttsBusy = true;
+  while (ttsQueue.length > 0 || !ttsStreamDone) {
+    if (ttsQueue.length === 0) {
+      await new Promise(r => setTimeout(r, 60));
+      continue;
+    }
+    const chunk = ttsQueue.shift();
+    if (chunk) {
+      try { await speakChunk(chunk); }
+      catch(_) { /* continue on error */ }
+    }
+  }
+  ttsBusy = false;
+}
+
+async function speakChunk(text) {
+  // Uses the same Kokoro/browser logic from voice.js speakText
+  // but resolves when done so we can chain sentences
+  return new Promise((resolve) => {
+    if (!text.trim()) { resolve(); return; }
+    const clean = text
+      .replace(/```[\s\S]*?```/g, 'code block.')
+      .replace(/`[^`]+`/g, '')
+      .replace(/[*_#>~]/g, '')
+      .replace(/\n+/g, ' ')
+      .trim();
+    if (!clean) { resolve(); return; }
+
+    // Try Kokoro first (same URL as voice.js)
+    const KOKORO_URL   = 'http://localhost:8880';
+    const KOKORO_VOICE = 'am_adam';
+
+    fetch(`${KOKORO_URL}/v1/audio/speech`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'kokoro', input: clean, voice: KOKORO_VOICE, response_format: 'mp3', speed: 1.0 })
+    }).then(async r => {
+      if (!r.ok) throw new Error();
+      const blob = await r.blob();
+      const url  = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.onended = () => { URL.revokeObjectURL(url); resolve(); };
+      audio.onerror = () => { URL.revokeObjectURL(url); resolve(); };
+      audio.play();
+    }).catch(() => {
+      // Browser TTS fallback
+      if (!window.speechSynthesis) { resolve(); return; }
+      const utt = new SpeechSynthesisUtterance(clean);
+      utt.rate  = 1.15; utt.pitch = 1.1; utt.lang = 'en-US';
+      const voices = window.speechSynthesis.getVoices();
+      const v = voices.find(v => /en/i.test(v.lang));
+      if (v) utt.voice = v;
+      utt.onend   = resolve;
+      utt.onerror = resolve;
+      window.speechSynthesis.speak(utt);
+    });
+  });
 }
 
 // ── SEND MESSAGE ──────────────────────────────────────────────
@@ -91,7 +179,6 @@ async function sendMessage(text) {
 
   const inVoiceTab = window.JARVIS?.tab === 'voice';
 
-  // Only render chat bubbles in chat tab
   if (!inVoiceTab) addMessage('user', text);
   history.push({ role: 'user', content: text });
 
@@ -100,6 +187,11 @@ async function sendMessage(text) {
 
   const thinkingEl = inVoiceTab ? null : addThinking();
   if (inVoiceTab) window.JARVIS?.setState('thinking');
+
+  // Reset streaming TTS state
+  ttsQueue      = [];
+  ttsBusy       = false;
+  ttsStreamDone = false;
 
   try {
     const response = await fetch(`${OLLAMA_URL}/api/chat`, {
@@ -118,7 +210,14 @@ async function sendMessage(text) {
     const bubble  = inVoiceTab ? null : addMessage('assistant', '');
     const reader  = response.body.getReader();
     const decoder = new TextDecoder();
-    let full = '';
+    let full      = '';
+    let sentBuf   = ''; // buffer for sentence-splitting TTS
+
+    const ttsOn   = document.getElementById('tts-toggle')?.checked;
+    const doRealtimeTTS = !inVoiceTab && ttsOn; // real-time TTS only in chat tab
+
+    // Start TTS queue processor immediately if we'll use it
+    if (doRealtimeTTS) processTTSQueue();
 
     while (true) {
       const { done, value } = await reader.read();
@@ -128,8 +227,19 @@ async function sendMessage(text) {
         try {
           const data = JSON.parse(line);
           if (data.message?.content) {
-            full += data.message.content;
+            const tok = data.message.content;
+            full    += tok;
+            sentBuf += tok;
             if (bubble) { bubble.textContent = full; chatEl.scrollTop = chatEl.scrollHeight; }
+
+            // Real-time: flush complete sentences into TTS queue
+            if (doRealtimeTTS) {
+              const { sentences, remaining } = flushSentenceBuffer(sentBuf);
+              if (sentences.length) {
+                ttsQueue.push(...sentences);
+                sentBuf = remaining;
+              }
+            }
           }
         } catch { /* partial JSON */ }
       }
@@ -137,18 +247,25 @@ async function sendMessage(text) {
 
     history.push({ role: 'assistant', content: full });
 
-    // Speak the response
-    const ttsOn   = document.getElementById('tts-toggle')?.checked;
-    const doSpeak = inVoiceTab || ttsOn; // always speak in voice tab
-    if (doSpeak && full.trim() && window.speakText) {
-      window.speakText(full);
+    if (doRealtimeTTS) {
+      // Flush any remaining partial sentence
+      const { sentences } = flushSentenceBuffer(sentBuf, true);
+      if (sentences.length) ttsQueue.push(...sentences);
+      ttsStreamDone = true;
+      // processTTSQueue is already running
     } else if (inVoiceTab) {
-      // TTS off but in voice tab — loop back anyway
-      window.JARVIS?.onSpeakEnd();
+      // Voice tab: speak full response at end (existing behaviour)
+      if (full.trim() && window.speakText) {
+        window.speakText(full);
+      } else {
+        window.JARVIS?.onSpeakEnd();
+      }
     }
+    // If TTS toggle off and chat tab: nothing to speak
 
   } catch (err) {
     if (thinkingEl) thinkingEl.remove();
+    ttsStreamDone = true;
     showError(err.message.includes('fetch')
       ? 'Cannot reach Ollama. Start it with: OLLAMA_ORIGINS=* ollama serve'
       : err.message);
