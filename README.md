@@ -1,159 +1,81 @@
-# Local AI Chat (Ollama UI)
+# J.A.R.V.I.S Local Agent
 
-A minimal, browser-based chat interface for running AI models locally using Ollama.
-
-No backend required.  
-Runs fully on your machine.
+A sleek, Iron Man-inspired AI assistant running in your browser. Features 3D WebGL visuals, voice-to-text, real-time local text-to-speech (Kokoro), and support for both local Ollama models and cloud-based Anthropic Claude models.
 
 ---
 
 ## Features
 
-- Local AI chat (no external API)
-- Streaming responses
-- Model switcher (llama, mistral, gemma, phi, etc.)
-- Auto-detect Ollama status
-- Clean, responsive UI
-- Error handling for connection issues
+- **Dual Interface:** Tab-based Chat mode and hands-free auto-looping Voice mode.
+- **Voice STT & TTS:** Wake word detection ("Jarvis"), continuous listening via Web Speech API, and real-time streaming TTS via Kokoro (with native browser fallback).
+- **3D Visuals:** Interactive WebGL/Three.js data orb and responsive particle system.
+- **Hybrid Brains:** Run 100% locally with Ollama (Llama 3, Mistral, Gemma, Phi) or use the cloud with Anthropic Claude 3.5/3.7.
+- **CORS Proxy:** Custom Node.js proxy to securely call Anthropic from the browser without CORS blocks.
 
 ---
 
 ## Requirements
 
-- Python (for simple HTTP server)
-- Ollama installed and running
-
-Install Ollama:
-https://ollama.com/download
+- **Python** (for the UI HTTP server)
+- **Node.js** (for the Anthropic proxy)
+- **Ollama** (for local models)
+- **Docker** (for Kokoro local TTS)
+- **Anthropic API Key** (Optional, only needed if using Claude)
 
 ---
 
-## Setup
+## Setup & Boot Sequence
+
+You will need four separate terminal windows to run all services simultaneously.
 
 ### 1. Start Ollama
-```
-ollama serve
-```
+Enable CORS so the browser can fetch local models, then start the server:
+$env:OLLAMA_ORIGINS="*"; ollama serv
 
-Optional (fix CORS issues):
-```
-OLLAMA_ORIGINS=* ollama serve
-```
+### 2. Start Kokoro TTS
+Boot the local text-to-speech engine via Docker:
+docker run --gpus all -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-gpu:v0.2.2
 
----
+### 3. Start the Anthropic Proxy
+Navigate to your project folder and start the Node.js proxy to bypass CORS for Claude:
+cd "C:\Stuff\Code\Local JARVIS"
+node proxy.js
 
-### 2. Pull a model
-Example:
-```
-ollama pull llama3.2
-```
-
-You can also use:
-- llama3
-- mistral
-- gemma3
-- phi3
-
----
-
-### 3. Run local server
-
-Inside your project folder:
-```
+### 4. Start the Web Server
+Host your front-end HTML/CSS/JS files:
+cd "C:\Stuff\Code\Local JARVIS"
 python -m http.server 8080
-```
 
----
+### 5. Open in Browser
+Navigate to:
+http://localhost:8080/index.html
 
-### 4. Open in browser
-
-http://localhost:8080/ai_agent_test.html
-
----
-
-## How It Works
-
-- Frontend sends requests to:
-```
-http://localhost:11434/api/chat
-```
-
-- Uses streaming responses from Ollama
-- Maintains chat history in memory
-- Dynamically updates UI as tokens arrive
-
----
-
-## Project Structure
-
-```
 /project-folder
- ├── ai_agent_test.html
+ ├── index.html       # Main UI, DOM structure, and inline Three.js 3D/particle scripts
+ ├── style.css        # CSS grid, animations, and typography
+ ├── app.js           # Tab switching and 3D state management
+ ├── chat.js          # Ollama/Anthropic API logic and TTS sentence-chunking queue
+ ├── voice.js         # Web Speech STT, Wake Word logic, and audio playback
+ ├── proxy.js         # Node.js CORS proxy server for Anthropic
  └── README.md
-```
 
----
+# Controls
+Enter → Send message
+Shift + Enter → New line
+Space → Toggle microphone (in Chat tab)
+"Jarvis" → Wake word to activate listening (in Chat tab)
+Dropdown → Switch between Local (Ollama) and Cloud (Claude) models
 
-## Controls
+# Troubleshooting
+API Key Required Error
+If using Claude, you must paste your Anthropic API key into the input field that appears next to the model selector.
 
-- Enter → send message  
-- Shift + Enter → new line  
-- Dropdown → switch model  
+Ollama not detected / OFFLINE
+Ensure terminal 1 is running and the OLLAMA_ORIGINS="*" variable was set before running ollama serve.
 
----
+Claude responses are failing
+Ensure node proxy.js is running on port 3000 in terminal 3.
 
-## Troubleshooting
+No Audio / TTS failing
+Ensure Docker is running the Kokoro container on port 8880. If Kokoro fails, the app will automatically fall back to the browser's native speechSynthesis.
 
-### Ollama not detected
-Make sure:
-```
-ollama serve
-```
-is running
-
----
-
-### CORS error / fetch failed
-Run:
-```
-OLLAMA_ORIGINS=* ollama serve
-```
-
----
-
-### Model not showing
-Pull it manually:
-```
-ollama pull <model-name>
-```
-
----
-
-### 404 errors in terminal
-
-Example:
-```
-GET /favicon.ico 404
-GET /ollama-chat.html 404
-```
-
-Not critical.  
-Only means those files don’t exist.
-
----
-
-## Notes
-
-- Everything runs locally
-- No data leaves your machine
-- No API keys needed
-
----
-
-## Next Improvements (optional)
-
-- Save chat history (localStorage)
-- Markdown rendering
-- Code highlighting
-- File upload support
-- Multi-chat sessions
