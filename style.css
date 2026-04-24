@@ -278,6 +278,15 @@ header {
   position: relative;
 }
 
+#particles-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none; /* Allows clicking text underneath */
+}
+
 /* Left column — headline text, bottom-anchored like shader.se */
 .hero-left {
   flex: 0 0 52%;
@@ -308,6 +317,7 @@ header {
   line-height: 0.95;
   color: var(--text);
   margin-bottom: 28px;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.25), 0 0 40px rgba(0, 220, 180, 0.15);
 }
 
 .hero-sub {
@@ -610,16 +620,6 @@ footer {
 }
 #transcript-live.active { display: block; }
 
-/* ── 3D CANVAS ──────────────────────────────────────────────── */
-#three-canvas {
-  position: fixed;
-  pointer-events: none;
-  z-index: 2;
-  /* Fade left edge so it doesn't intrude on text */
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.5) 18%, rgba(0,0,0,0.85) 40%, black 100%);
-  mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.5) 18%, rgba(0,0,0,0.85) 40%, black 100%);
-}
-
 /* ── TAB TRANSITION WRAPPER ─────────────────────────────────── */
 .tab-panel {
   transform-style: preserve-3d;
@@ -798,5 +798,4 @@ footer {
 /* ════════ Reduce motion ════════ */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
-  #three-canvas { display: none; }
 }
