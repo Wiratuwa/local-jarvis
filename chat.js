@@ -81,12 +81,8 @@ let ttsQueue      = [];
 let ttsBusy       = false;
 let ttsStreamDone = false;
 
-// Split only on sentence-ending punctuation followed by whitespace or end-of-string.
-// Avoids splitting on: "e.g.", "U.S.", "3.14", "no cap!", mid-word abbreviations.
-// Minimum 40 chars before a split so we don't fire tiny fragments.
 function flushSentenceBuffer(buffer, force = false) {
   const sentences = [];
-  // Matches: 40+ chars, ending in . ! ? followed by space/end (not another letter/digit)
   const re = /(.{40,}?)([.!?]+)(?=\s|$)(?![\w])/g;
   let lastIndex = 0;
   let match;
@@ -103,6 +99,35 @@ function flushSentenceBuffer(buffer, force = false) {
   return { sentences, remaining };
 }
 
+// Immediately fetch audio in the background and return a Promise
+async function prepareAudioChunk(text) {
+  const clean = text
+    .replace(/```[\s\S]*?```/g, 'code block.')
+    .replace(/`[^`]+`/g, '')
+    .replace(/[*_#>~]/g, '')
+    .replace(/\n+/g, ' ')
+    .trim();
+  if (!clean) return null;
+
+  const KOKORO_URL   = 'http://localhost:8880';
+  const KOKORO_VOICE = 'am_adam';
+
+  try {
+    const r = await fetch(`${KOKORO_URL}/v1/audio/speech`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'kokoro', input: clean, voice: KOKORO_VOICE, response_format: 'mp3', speed: 1.0 })
+    });
+    if (!r.ok) throw new Error();
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    return { type: 'kokoro', url };
+  } catch (err) {
+    return { type: 'browser', text: clean };
+  }
+}
+
+// Playback loop consumes the pre-fetched audio promises
 async function processTTSQueue() {
   if (ttsBusy) return;
   ttsBusy = true;
@@ -111,56 +136,39 @@ async function processTTSQueue() {
       await new Promise(r => setTimeout(r, 60));
       continue;
     }
-    const chunk = ttsQueue.shift();
-    if (chunk) {
-      try { await speakChunk(chunk); }
-      catch(_) { /* continue on error */ }
+    
+    // Shift the Promise off the queue and wait for it to resolve
+    const audioPromise = ttsQueue.shift();
+    if (audioPromise) {
+      try {
+        const playable = await audioPromise;
+        await playChunk(playable);
+      } catch (_) { /* continue on error */ }
     }
   }
   ttsBusy = false;
 }
 
-async function speakChunk(text) {
-  // Uses the same Kokoro/browser logic from voice.js speakText
-  // but resolves when done so we can chain sentences
-  return new Promise((resolve) => {
-    if (!text.trim()) { resolve(); return; }
-    const clean = text
-      .replace(/```[\s\S]*?```/g, 'code block.')
-      .replace(/`[^`]+`/g, '')
-      .replace(/[*_#>~]/g, '')
-      .replace(/\n+/g, ' ')
-      .trim();
-    if (!clean) { resolve(); return; }
+function playChunk(playable) {
+  return new Promise(resolve => {
+    if (!playable) { resolve(); return; }
 
-    // Try Kokoro first (same URL as voice.js)
-    const KOKORO_URL   = 'http://localhost:8880';
-    const KOKORO_VOICE = 'am_adam';
-
-    fetch(`${KOKORO_URL}/v1/audio/speech`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'kokoro', input: clean, voice: KOKORO_VOICE, response_format: 'mp3', speed: 1.0 })
-    }).then(async r => {
-      if (!r.ok) throw new Error();
-      const blob = await r.blob();
-      const url  = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audio.onended = () => { URL.revokeObjectURL(url); resolve(); };
-      audio.onerror = () => { URL.revokeObjectURL(url); resolve(); };
+    if (playable.type === 'kokoro') {
+      const audio = new Audio(playable.url);
+      audio.onended = () => { URL.revokeObjectURL(playable.url); resolve(); };
+      audio.onerror = () => { URL.revokeObjectURL(playable.url); resolve(); };
       audio.play();
-    }).catch(() => {
-      // Browser TTS fallback
+    } else {
       if (!window.speechSynthesis) { resolve(); return; }
-      const utt = new SpeechSynthesisUtterance(clean);
-      utt.rate  = 1.15; utt.pitch = 1.1; utt.lang = 'en-US';
+      const utt = new SpeechSynthesisUtterance(playable.text);
+      utt.rate = 1.15; utt.pitch = 1.1; utt.lang = 'en-US';
       const voices = window.speechSynthesis.getVoices();
       const v = voices.find(v => /en/i.test(v.lang));
       if (v) utt.voice = v;
-      utt.onend   = resolve;
+      utt.onend = resolve;
       utt.onerror = resolve;
       window.speechSynthesis.speak(utt);
-    });
+    }
   });
 }
 
@@ -236,7 +244,8 @@ async function sendMessage(text) {
             if (doRealtimeTTS) {
               const { sentences, remaining } = flushSentenceBuffer(sentBuf);
               if (sentences.length) {
-                ttsQueue.push(...sentences);
+                // Instantly start fetching audio and push the PROMISE to the queue
+                sentences.forEach(s => ttsQueue.push(prepareAudioChunk(s)));
                 sentBuf = remaining;
               }
             }
@@ -250,7 +259,9 @@ async function sendMessage(text) {
     if (doRealtimeTTS) {
       // Flush any remaining partial sentence
       const { sentences } = flushSentenceBuffer(sentBuf, true);
-      if (sentences.length) ttsQueue.push(...sentences);
+      if (sentences.length) {
+        sentences.forEach(s => ttsQueue.push(prepareAudioChunk(s)));
+      }
       ttsStreamDone = true;
       // processTTSQueue is already running
     } else if (inVoiceTab) {
