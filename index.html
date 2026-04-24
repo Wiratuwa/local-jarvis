@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>J.A.R.V.I.S Local Agent</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div>
+  <div class="corner corner-br"></div>
+
+  <div id="speaking-bar">
+    <div class="speak-bars">
+      <div class="speak-bar"></div><div class="speak-bar"></div>
+      <div class="speak-bar"></div><div class="speak-bar"></div>
+      <div class="speak-bar"></div>
+    </div>
+    SPEAKING
+  </div>
+
+  <div id="transcript-live">🎙 Listening…</div>
+
+  <!-- ── HEADER ───────────────────────────────────────────── -->
+  <header>
+    <div class="logo-ring">
+      <svg viewBox="0 0 40 40" fill="none">
+        <circle class="ring1" cx="20" cy="20" r="17" stroke="rgba(0,200,255,0.4)" stroke-width="1" stroke-dasharray="4 3"/>
+        <circle class="ring2" cx="20" cy="20" r="12" stroke="rgba(0,150,255,0.5)" stroke-width="1" stroke-dasharray="2 4"/>
+        <circle cx="20" cy="20" r="6" fill="rgba(0,200,255,0.15)" stroke="rgba(0,200,255,0.7)" stroke-width="1.5"/>
+        <circle cx="20" cy="20" r="2.5" fill="var(--accent)"/>
+      </svg>
+    </div>
+
+    <div class="header-info">
+      <h1>J.A.R.V.I.S LOCAL</h1>
+      <div class="status">
+        <span class="dot" id="dot"></span>
+        <span id="status-text">INITIALIZING…</span>
+      </div>
+    </div>
+
+    <div class="tab-switcher">
+      <button class="tab-btn active" id="tab-chat" onclick="switchTab('chat')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        CHAT
+      </button>
+      <button class="tab-btn" id="tab-voice" onclick="switchTab('voice')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        VOICE
+      </button>
+    </div>
+
+    <div class="chat-controls" id="chat-controls">
+      <button id="wake-btn" class="btn-wake" title='Wake word ON — say "Jarvis" to activate'>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        <span class="wake-label">WAKE</span>
+      </button>
+      <label class="tts-toggle" title="Text-to-speech">
+        <input type="checkbox" id="tts-toggle" checked />
+        <span class="tts-pill"></span>
+        TTS
+      </label>
+    </div>
+
+    <select class="model-select" id="model-select">
+      <option value="llama3.2">llama3.2</option>
+      <option value="llama3">llama3</option>
+      <option value="mistral">mistral</option>
+      <option value="gemma3">gemma3</option>
+      <option value="phi3">phi3</option>
+    </select>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════════
+       CHAT TAB
+  ══════════════════════════════════════════════════════════ -->
+  <div id="panel-chat" class="tab-panel active">
+    <div id="chat">
+      <div id="empty">
+        <div class="jarvis-ring">
+          <svg viewBox="0 0 100 100" fill="none">
+            <circle class="ring1" cx="50" cy="50" r="45" stroke="rgba(0,200,255,0.3)" stroke-width="1.5" stroke-dasharray="6 4"/>
+            <circle class="ring2" cx="50" cy="50" r="35" stroke="rgba(0,150,255,0.4)" stroke-width="1" stroke-dasharray="3 5"/>
+            <circle class="ring3" cx="50" cy="50" r="22" stroke="rgba(0,200,255,0.5)" stroke-width="1" stroke-dasharray="2 3"/>
+            <circle cx="50" cy="50" r="12" fill="rgba(0,200,255,0.1)" stroke="rgba(0,200,255,0.6)" stroke-width="1.5"/>
+            <circle cx="50" cy="50" r="5" fill="var(--accent)" opacity="0.9"/>
+          </svg>
+          <div class="jarvis-core">AI</div>
+        </div>
+        <div class="tagline">JARVIS LOCAL AGENT</div>
+        <p>
+          Say <span class="key-hint">JARVIS</span> to activate &nbsp;·&nbsp;
+          Click the mic or press <span class="key-hint">SPACE</span> to speak directly.<br/>
+          Type to send a message manually. All processing stays on your machine.
+        </p>
+      </div>
+    </div>
+
+    <footer>
+      <div class="error-bar" id="error-bar"></div>
+      <div class="input-row">
+        <textarea id="input" rows="1" placeholder='Type a command or say "Jarvis" to speak…' autofocus></textarea>
+        <button class="btn-voice" id="voice-btn" title="Click to speak (or press Space)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="2" width="6" height="11" rx="3"/>
+            <path d="M5 10a7 7 0 0 0 14 0"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+            <line x1="9" y1="22" x2="15" y2="22"/>
+          </svg>
+        </button>
+        <button id="send">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="14" x2="8" y2="2"/>
+            <polyline points="3,7 8,2 13,7"/>
+          </svg>
+        </button>
+      </div>
+      <p class="hint">
+        <span class="key">ENTER</span> send &nbsp;·&nbsp;
+        <span class="key">SHIFT+ENTER</span> new line &nbsp;·&nbsp;
+        <span class="key">SPACE</span> toggle mic &nbsp;·&nbsp;
+        <span class="key">JARVIS</span> wake word &nbsp;·&nbsp;
+        Runs 100% locally
+      </p>
+    </footer>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       VOICE TAB
+  ══════════════════════════════════════════════════════════ -->
+  <div id="panel-voice" class="tab-panel">
+    <div class="voice-panel">
+
+      <div class="voice-orb-wrap">
+        <div class="voice-orb" id="voice-orb">
+          <svg viewBox="0 0 200 200" fill="none">
+            <circle class="orb-ring1" cx="100" cy="100" r="90" stroke="rgba(0,200,255,0.2)" stroke-width="1.5" stroke-dasharray="8 5"/>
+            <circle class="orb-ring2" cx="100" cy="100" r="74" stroke="rgba(0,150,255,0.3)" stroke-width="1" stroke-dasharray="4 6"/>
+            <circle class="orb-ring3" cx="100" cy="100" r="58" stroke="rgba(0,200,255,0.4)" stroke-width="1" stroke-dasharray="3 4"/>
+            <circle cx="100" cy="100" r="42" fill="rgba(0,200,255,0.06)" stroke="rgba(0,200,255,0.5)" stroke-width="1.5"/>
+            <circle cx="100" cy="100" r="24" fill="rgba(0,200,255,0.1)" stroke="rgba(0,200,255,0.7)" stroke-width="1.5"/>
+            <circle class="orb-core" cx="100" cy="100" r="10" fill="var(--accent)" opacity="0.9"/>
+          </svg>
+        </div>
+        <div class="orb-wave" id="orb-wave">
+          <div class="orb-bar"></div><div class="orb-bar"></div><div class="orb-bar"></div>
+          <div class="orb-bar"></div><div class="orb-bar"></div><div class="orb-bar"></div>
+          <div class="orb-bar"></div>
+        </div>
+      </div>
+
+      <div class="voice-state" id="voice-state">IDLE</div>
+
+      <div class="voice-exchange" id="voice-exchange">
+        <div class="voice-you"   id="voice-you"></div>
+        <div class="voice-reply" id="voice-reply"></div>
+      </div>
+
+      <button class="voice-ptt" id="voice-ptt" onclick="voicePTT()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        TAP TO SPEAK
+      </button>
+
+      <p class="voice-hint">JARVIS listens automatically after each response</p>
+    </div>
+  </div>
+
+  <script src="chat.js"></script>
+  <script src="voice.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
