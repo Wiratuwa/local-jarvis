@@ -1,0 +1,73 @@
+/* ═══════════════════════════════════════════════════════════════
+   ANIMATIONS — All keyframes and transition classes
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes spin        { to { transform: rotate(360deg) } }
+@keyframes fadein      { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: none } }
+@keyframes blink       { 0%,80%,100% { opacity: 0.15; transform: scale(0.6) } 40% { opacity: 1; transform: scale(1) } }
+@keyframes pulse-ring  { 0% { box-shadow: 0 0 0 0 rgba(255,51,68,0.35) } 70% { box-shadow: 0 0 0 8px rgba(255,51,68,0) } 100% { box-shadow: 0 0 0 0 rgba(255,51,68,0) } }
+@keyframes speak-wave  { 0%,100% { transform: scaleY(0.3); opacity: 0.4 } 50% { transform: scaleY(1); opacity: 1 } }
+@keyframes wake-pulse  { 0% { box-shadow: 0 0 0 0 var(--wake-glow) } 70% { box-shadow: 0 0 0 6px transparent } 100% { box-shadow: 0 0 0 0 transparent } }
+@keyframes orb-idle    { 0%,100% { opacity: 0.75 } 50% { opacity: 1 } }
+@keyframes orb-listen  { 0%,100% { transform: scale(1) } 50% { transform: scale(1.04) } }
+@keyframes orb-think   { 0%,100% { transform: rotate(0deg) } 100% { transform: rotate(360deg) } }
+@keyframes orb-speak   { 0%,100% { transform: scale(1) } 50% { transform: scale(1.06) } }
+@keyframes orb-bar     { 0%,100% { transform: scaleY(0.25) } 50% { transform: scaleY(1) } }
+@keyframes ptt-glow    { 0% { box-shadow: 0 0 0 0 rgba(0,240,255,0.25) } 70% { box-shadow: 0 0 0 10px transparent } 100% { box-shadow: 0 0 0 0 transparent } }
+@keyframes line-in     { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+
+/* ── Entrance reveal animation ───────────────── */
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes reveal-scale {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+
+.reveal {
+  opacity: 0;
+  animation: reveal-up 0.6s cubic-bezier(0.2, 0, 0.1, 1) forwards;
+}
+.reveal-d1 { animation-delay: 0.1s; }
+.reveal-d2 { animation-delay: 0.2s; }
+.reveal-d3 { animation-delay: 0.35s; }
+.reveal-d4 { animation-delay: 0.5s; }
+.reveal-d5 { animation-delay: 0.65s; }
+
+/* ── 3D Tab transitions ─────────────────────── */
+@keyframes panel-exit {
+  0%   { opacity: 1; transform: perspective(1200px) rotateY(0deg) translateZ(0px); }
+  40%  { opacity: 0.5; transform: perspective(1200px) rotateY(-22deg) translateZ(-60px) scale(0.96); }
+  100% { opacity: 0; transform: perspective(1200px) rotateY(-40deg) translateZ(-140px) scale(0.9); }
+}
+@keyframes panel-enter {
+  0%   { opacity: 0; transform: perspective(1200px) rotateY(40deg) translateZ(-140px) scale(0.9); }
+  60%  { opacity: 0.7; transform: perspective(1200px) rotateY(6deg) translateZ(-20px) scale(0.98); }
+  100% { opacity: 1; transform: perspective(1200px) rotateY(0deg) translateZ(0px) scale(1); }
+}
+@keyframes panel-exit-rev {
+  0%   { opacity: 1; transform: perspective(1200px) rotateY(0deg) translateZ(0px); }
+  40%  { opacity: 0.5; transform: perspective(1200px) rotateY(22deg) translateZ(-60px) scale(0.96); }
+  100% { opacity: 0; transform: perspective(1200px) rotateY(40deg) translateZ(-140px) scale(0.9); }
+}
+@keyframes panel-enter-rev {
+  0%   { opacity: 0; transform: perspective(1200px) rotateY(-40deg) translateZ(-140px) scale(0.9); }
+  60%  { opacity: 0.7; transform: perspective(1200px) rotateY(-6deg) translateZ(-20px) scale(0.98); }
+  100% { opacity: 1; transform: perspective(1200px) rotateY(0deg) translateZ(0px) scale(1); }
+}
+
+.tab-panel.anim-exit     { animation: panel-exit     0.38s cubic-bezier(0.4,0,0.2,1) forwards; pointer-events: none; display: flex !important; }
+.tab-panel.anim-exit-rev { animation: panel-exit-rev 0.38s cubic-bezier(0.4,0,0.2,1) forwards; pointer-events: none; display: flex !important; }
+.tab-panel.anim-enter     { animation: panel-enter     0.42s cubic-bezier(0.2,0,0.1,1) forwards; display: flex !important; }
+.tab-panel.anim-enter-rev { animation: panel-enter-rev 0.42s cubic-bezier(0.2,0,0.1,1) forwards; display: flex !important; }
+
+/* ── Reduce motion ───────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}

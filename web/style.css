@@ -1,0 +1,11 @@
+/* ═══════════════════════════════════════════════════════════════
+   LOCAL JARVIS — Master Stylesheet
+   Retro-Futuristic Command Center • Shader.se-Inspired
+   ═══════════════════════════════════════════════════════════════ */
+
+@import url('css/base.css');
+@import url('css/sidebar.css');
+@import url('css/chat.css');
+@import url('css/voice.css');
+@import url('css/animations.css');
+@import url('css/responsive.css');

@@ -1,0 +1,263 @@
+/* ═══════════════════════════════════════════════════════════════
+   BASE — Reset, Design Tokens, Typography, Body, Overlays
+   ═══════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* ── Palette ─────────────────────────────────── */
+  --bg:            #050608;
+  --surface:       rgba(10, 14, 20, 0.85);
+  --surface-solid: #0a0e14;
+  --surface2:      #0f1318;
+  --border:        rgba(255,255,255,0.10);
+  --border-bright: rgba(255,255,255,0.25);
+  --border-accent: rgba(0,240,255,0.30);
+  --text:          #ffffff;
+  --text-muted:    rgba(226,232,236,0.70);
+  --text-dim:      rgba(226,232,236,0.45);
+  --accent:        #00f0ff;
+  --accent2:       #00dcb4;
+  --accent-glow:   rgba(0,240,255,0.08);
+  --danger:        #ff3344;
+  --success:       #00dcb4;
+  --wake:          #f0b040;
+  --wake-glow:     rgba(240,176,64,0.15);
+  --user-bg:       rgba(0,240,255,0.03);
+  --line:          rgba(255,255,255,0.06);
+
+  /* ── Typography ──────────────────────────────── */
+  --font-display:  'Cormorant Garamond', 'Georgia', serif;
+  --font-body:     'Outfit', sans-serif;
+  --font-mono:     'JetBrains Mono', 'Consolas', monospace;
+
+  /* ── Glassmorphism ───────────────────────────── */
+  --glass-bg:      rgba(8, 12, 18, 0.75);
+  --glass-blur:    16px;
+  --glass-border:  rgba(255,255,255,0.06);
+}
+
+html { font-size: 16px; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-weight: 300;
+  height: 100vh;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  position: relative;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Background gradient mesh ────────────────── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 80%, rgba(0,240,255,0.03) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 60% at 80% 20%, rgba(0,220,180,0.025) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 40% at 50% 50%, rgba(0,0,0,0) 0%, var(--bg) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Film grain overlay ──────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+}
+
+/* ── Scanline overlay ────────────────────────── */
+.overlay-scanlines {
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 9998;
+}
+
+/* ── Vignette overlay ────────────────────────── */
+.overlay-vignette {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse 70% 70% at 50% 50%, transparent 50%, rgba(0,0,0,0.5) 100%);
+  pointer-events: none;
+  z-index: 9997;
+}
+
+/* ── Corner marks ────────────────────────────── */
+.corner {
+  position: fixed;
+  width: 18px;
+  height: 18px;
+  border-color: rgba(0,240,255,0.12);
+  border-style: solid;
+  z-index: 9996;
+  transition: border-color 0.6s ease;
+}
+.corner-tl { top: 16px;    left: 16px;   border-width: 1px 0 0 1px; }
+.corner-tr { top: 16px;    right: 16px;  border-width: 1px 1px 0 0; }
+.corner-bl { bottom: 16px; left: 16px;   border-width: 0 0 1px 1px; }
+.corner-br { bottom: 16px; right: 16px;  border-width: 0 1px 1px 0; }
+
+/* ── App shell ───────────────────────────────── */
+.app-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Header ──────────────────────────────────── */
+header {
+  padding: 0 32px 0 20px;
+  height: 56px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+  position: relative;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+
+.logo-ring { position: relative; width: 32px; height: 32px; flex-shrink: 0; opacity: 0.85; }
+.logo-ring svg { width: 100%; height: 100%; }
+.logo-ring .ring1 { animation: spin 16s linear infinite; }
+.logo-ring .ring2 { animation: spin 10s linear infinite reverse; }
+
+.header-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 20px; }
+.header-info h1 {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.status {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 300;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+}
+.dot { width: 5px; height: 5px; border-radius: 50%; background: var(--text-dim); transition: background 0.4s; flex-shrink: 0; }
+.dot.online { background: var(--accent2); box-shadow: 0 0 8px rgba(0,220,180,0.5); }
+.dot.error  { background: var(--danger); box-shadow: 0 0 8px rgba(255,51,68,0.4); }
+
+/* Open sidebar button */
+.sidebar-open-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 4px 8px 4px 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  flex-shrink: 0;
+  transition: color 0.3s;
+}
+.sidebar-open-btn:hover { color: var(--accent); }
+/* Removed: body.sidebar-collapsed .sidebar-open-btn { display: flex; } */
+
+/* Theme Toggle */
+.btn-theme-toggle {
+  background: transparent;
+  border: 1px solid var(--border-bright);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  transition: all 0.3s;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.btn-theme-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+
+/* ── Tab panels ──────────────────────────────── */
+.tab-panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+.tab-panel.active { display: flex; }
+.tab-panel { transform-style: preserve-3d; backface-visibility: hidden; }
+
+/* ── Selection style ─────────────────────────── */
+::selection { background: rgba(0,240,255,0.2); color: #fff; }
+
+/* ── Light Mode Theme ────────────────────────── */
+:root.theme-light {
+  --bg:            #f4f6f8;
+  --surface:       rgba(255, 255, 255, 0.85);
+  --surface-solid: #ffffff;
+  --surface2:      #e2e8f0;
+  --border:        rgba(0,0,0,0.15);
+  --border-bright: rgba(0,0,0,0.25);
+  --border-accent: rgba(0,184,148,0.4);
+  --text:          #0f172a;
+  --text-muted:    rgba(15,23,42,0.85);
+  --text-dim:      rgba(15,23,42,0.55);
+  --accent:        #00b894;
+  --accent2:       #0984e3;
+  --accent-glow:   rgba(0,184,148,0.1);
+  --danger:        #ff3344;
+  --success:       #00b894;
+  --wake:          #f0b040;
+  --wake-glow:     rgba(240,176,64,0.15);
+  --user-bg:       rgba(0,184,148,0.05);
+  --line:          rgba(0,0,0,0.08);
+
+  --glass-bg:      rgba(255, 255, 255, 0.75);
+  --glass-border:  rgba(0,0,0,0.06);
+}
+
+:root.theme-light body::after {
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 80%, rgba(0,184,148,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 60% at 80% 20%, rgba(9,132,227,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 40% at 50% 50%, rgba(255,255,255,0) 0%, var(--bg) 100%);
+}
+
+:root.theme-light body::before { opacity: 0.2; }
+:root.theme-light .overlay-scanlines { background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.05) 2px, rgba(255,255,255,0.05) 4px); }
+:root.theme-light .overlay-vignette { background: radial-gradient(ellipse 70% 70% at 50% 50%, transparent 50%, rgba(255,255,255,0.6) 100%); }
+:root.theme-light .corner { border-color: rgba(0,184,148,0.25); }
+:root.theme-light .dot.online { box-shadow: 0 0 8px rgba(9,132,227,0.5); }
+:root.theme-light ::selection { background: rgba(0,184,148,0.2); color: #fff; }
